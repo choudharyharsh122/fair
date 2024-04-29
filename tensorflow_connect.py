@@ -155,6 +155,7 @@ class CustomNetwork(tf.keras.Model):
 
     def to_backend(obj):
         return tf.convert_to_tensor(obj)
-
-
     
+    def save(self, dir):
+        self.save(str(dir)+'.h5')
+

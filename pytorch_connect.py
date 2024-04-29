@@ -48,8 +48,8 @@ class CustomNetwork(nn.Module):
         return loss
     
     def get_obj(self, x, y, params):
-        x = torch.Tensor(x, torch.float32)
-        y = torch.Tensor(x, torch.float32)
+        x = torch.Tensor(x).to(torch.float32)
+        y = torch.Tensor(y).to(torch.float32)
         model_parameters = list(self.parameters())
         for i in range(len(params)):
             model_parameters[i].data = torch.Tensor(params[i])
@@ -63,8 +63,8 @@ class CustomNetwork(nn.Module):
         return fval.item()
     
     def get_obj_grad(self, x, y, params):
-        x = torch.Tensor(x, torch.float32)
-        y = torch.Tensor(x, torch.float32)
+        x = torch.Tensor(x).to(torch.float32)
+        y = torch.Tensor(y).to(torch.float32)
         fgrad = []
         obj_fwd = self.forward(x).flatten()
         obj_loss = self.compute_loss(obj_fwd, y.flatten())
@@ -87,10 +87,10 @@ class CustomNetwork(nn.Module):
     
     def get_constraint(self, x1_sensitive, y1_sensitive, x2_sensitive, y2_sensitive, params):
         
-        x1_sensitive = torch.Tensor(x1_sensitive, torch.float32)
-        y1_sensitive = torch.Tensor(y1_sensitive, torch.float32)
-        x2_sensitive = torch.Tensor(x2_sensitive, torch.float32)
-        y2_sensitive = torch.Tensor(y2_sensitive, torch.float32)
+        x1_sensitive = torch.Tensor(x1_sensitive).to(torch.float32)
+        y1_sensitive = torch.Tensor(y1_sensitive).to(torch.float32)
+        x2_sensitive = torch.Tensor(x2_sensitive).to(torch.float32)
+        y2_sensitive = torch.Tensor(y2_sensitive).to(torch.float32)
 
         sensitive_fwd1 = self.forward(x1_sensitive).flatten()
         sensitive_loss1 = self.compute_loss(sensitive_fwd1, y1_sensitive.flatten())
@@ -104,10 +104,10 @@ class CustomNetwork(nn.Module):
     
     def get_constraint_grad(self, x1_sensitive, y1_sensitive, x2_sensitive, y2_sensitive, params):
 
-        x1_sensitive = torch.Tensor(x1_sensitive, torch.float32)
-        y1_sensitive = torch.Tensor(y1_sensitive, torch.float32)
-        x2_sensitive = torch.Tensor(x2_sensitive, torch.float32)
-        y2_sensitive = torch.Tensor(y2_sensitive, torch.float32)
+        x1_sensitive = torch.Tensor(x1_sensitive).to(torch.float32)
+        y1_sensitive = torch.Tensor(y1_sensitive).to(torch.float32)
+        x2_sensitive = torch.Tensor(x2_sensitive).to(torch.float32)
+        y2_sensitive = torch.Tensor(y2_sensitive).to(torch.float32)
         
         sensitive_fwd1 = self.forward(x1_sensitive).flatten()
         sensitive_loss1 = self.compute_loss(sensitive_fwd1, y1_sensitive.flatten())
@@ -140,6 +140,9 @@ class CustomNetwork(nn.Module):
 
     def to_backend(obj):
         return torch.Tensor(obj)
+    
+    def save(self, dir):
+        torch.save(self, str(dir)+'.pth')
     
 
 

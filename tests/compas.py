@@ -2,28 +2,32 @@ import pandas as pd
 from IPython.display import Markdown, display
 from sklearn.model_selection import train_test_split
 import numpy as np
-import StochasticGhost
 import os
+import sys
+import argparse
+import importlib
 
 def printmd(string):
     display(Markdown(string))
         
 
-import torch
-import torch.nn.functional as F
-import torch.nn as nn
 from sklearn.preprocessing import StandardScaler 
-from torch.nn.utils import clip_grad_norm_
-from pytorch_connect import CustomNetwork 
+
+sys.path.append("..")  # Add parent directory to the sys.path
+
+import StochasticGhost
 
 
-RACE_IND = 2
+RACE_IND = 4
 SENSITIVE_CODE_0 = 0
 SENSITIVE_CODE_1 = 1
 
 
 def preprocess_data():
-    raw_data = pd.read_csv("compas-scores-two-years.csv")
+
+    data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+    file_path = os.path.join(data_dir, "compas-scores-two-years.csv")
+    raw_data = pd.read_csv(file_path)
 
     df = raw_data[['age', 'c_charge_degree', 'race', 'age_cat', 'score_text', 'sex', 'priors_count',
                 'days_b_screening_arrest', 'decile_score', 'is_recid', 'two_year_recid', 'c_jail_in', 'c_jail_out']]
@@ -262,6 +266,28 @@ def paramvals(maxiter, beta, rho, lamb, hess, tau, mbsz, numcon, geomp, stepdeca
 if __name__ == "__main__":
     ######Training loop######
     x_train, X_train, y_train, X_val, y_val = preprocess_data()
+
+    parser = argparse.ArgumentParser(description="Dynamically import the model class")
+
+    # Add argument for module name
+    parser.add_argument("--model", type=str, help="Name of the model to import (backend_connect)")
+
+    # Parse command-line arguments
+    args = parser.parse_args()
+    model_name = args.model
+    parent_dir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.abspath(os.path.join(parent_dir, "..")))
+    # Dynamically import the specified module
+    if model_name:
+        model = importlib.import_module(model_name)
+
+        # Get the specified function from the imported module
+        CustomNetwork = getattr(model, "CustomNetwork")
+    else:
+        # Import the default module if no module name is provided
+        from pytorch_connect import CustomNetwork
+
+
     loss_bound=1
     trials = 21
     maxiter = 200
@@ -310,7 +336,10 @@ if __name__ == "__main__":
         ctrial2[:, trial] = itercs[:,1]
 
         saved_model.append(net)
-        torch.save(net, 'income_models_tr/saved_model'+str(trial)+'.pth')
+        directory = "../saved_models/"+str(model_name)
+        os.makedirs(directory, exist_ok=True)
+        # Save the model
+        net.save(os.path.join(directory, f'saved_model{trial}'))
         #acc_arr.append(acc)
 
 

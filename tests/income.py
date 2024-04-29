@@ -2,19 +2,19 @@ import pandas as pd
 from IPython.display import Markdown, display
 from sklearn.model_selection import train_test_split
 import numpy as np
-import StochasticGhost
 import os
+import sys
+import importlib
 
 def printmd(string):
     display(Markdown(string))
         
-
-import torch
-import torch.nn.functional as F
-import torch.nn as nn
 from sklearn.preprocessing import StandardScaler 
-from torch.nn.utils import clip_grad_norm_
-from pytorch_connect import CustomNetwork 
+import argparse
+
+sys.path.append("..")  # Add parent directory to the sys.path
+
+import StochasticGhost
 
 
 GENDER_IND = 2
@@ -26,8 +26,12 @@ def preprocess_data():
     #adult = pd.read_csv('adult.csv')
 
     column_names = ['age', 'workclass', 'fnlwgt', 'education', 'educational-num','marital-status', 'occupation', 'relationship', 'race', 'gender','capital-gain', 'capital-loss', 'hours-per-week', 'native-country','income']
+    
+    data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 
-    adult = pd.read_csv('adult.data', names=column_names)
+    # File path of the data file
+    file_path = os.path.join(data_dir, 'adult.data')
+    adult = pd.read_csv(file_path, names=column_names)
 
     ############# If you want to drop the missing value rows ################
     mask = adult.eq(' ?')
@@ -93,8 +97,8 @@ def preprocess_data():
     #y_val = np.expand_dims(y_val, axis=1)
 
     # Concatenate x_val and y_val along the columns
-    file_path_raw = 'val_data_income/val_data_raw_income.csv'
-    file_path_scaled = 'val_data_income/val_data_scaled_income.csv'
+    file_path_raw = os.path.join(data_dir, 'val_data_raw_income.csv')
+    file_path_scaled = os.path.join(data_dir, 'val_data_scaled_income.csv')
 
     data_combined_raw = np.concatenate((x_val, y_val), axis=1)
 
@@ -121,6 +125,7 @@ def preprocess_data():
 
     
     return  x_train, X_train, y_train, X_val, y_val
+
 
 
 class Operations:
@@ -274,6 +279,28 @@ def paramvals(maxiter, beta, rho, lamb, hess, tau, mbsz, numcon, geomp, stepdeca
 if __name__ == "__main__":
     ######Training loop######
     x_train, X_train, y_train, X_val, y_val = preprocess_data()
+    
+    parser = argparse.ArgumentParser(description="Dynamically import the model class")
+
+    # Add argument for module name
+    parser.add_argument("--model", type=str, help="Name of the model to import (backend_connect)")
+
+    # Parse command-line arguments
+    args = parser.parse_args()
+    model_name = args.model
+    parent_dir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.abspath(os.path.join(parent_dir, "..")))
+    # Dynamically import the specified module
+    if model_name:
+        model = importlib.import_module(model_name)
+
+        # Get the specified function from the imported module
+        CustomNetwork = getattr(model, "CustomNetwork")
+    else:
+        # Import the default module if no module name is provided
+        print("Please specify the model architecture")
+
+    # Call the function from the imported module
     loss_bound=1
     trials = 21
     maxiter = 200
@@ -290,6 +317,7 @@ if __name__ == "__main__":
     # X_val = torch.tensor(X_val, dtype=torch.float32)
     # Y_val = torch.tensor(y_val, dtype=torch.float32)
     saved_model = []
+    
     for trial in range(trials):
         print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>TRIAL", trial)
         
@@ -322,17 +350,20 @@ if __name__ == "__main__":
         ctrial2[:, trial] = itercs[:,1]
 
         saved_model.append(net)
-        torch.save(net, 'income_models_tr/saved_model'+str(trial)+'.pth')
-        #acc_arr.append(acc)
+        #torch.save(net, 'income_models_tr/saved_model'+str(trial)+'.pth')
+        directory = "../saved_models/"+str(model_name)
+        os.makedirs(directory, exist_ok=True)
+        # Save the model
+        net.save(os.path.join(directory, f'saved_model{trial}'))
 
 
-    print(">>>>>>>>>>>>>>>>>>>ACCURACY ARRAY<<<<<<<<<<<<<<<<")
+    print(">>>>>>>>>>>>>>>>>>>Completed trials<<<<<<<<<<<<<<<<")
     #print(acc_arr)
     df_ftrial = pd.DataFrame(ftrial, columns=range(1, ftrial.shape[1]+1), index=range(1, ftrial.shape[0]+1))
     df_ctrial1 = pd.DataFrame(ctrial1, columns=range(1, ctrial1.shape[1]+1), index=range(1, ctrial1.shape[0]+1))
     df_ctrial2 = pd.DataFrame(ctrial2, columns=range(1, ctrial2.shape[1]+1), index=range(1, ctrial2.shape[0]+1))
 
     # Save DataFrames to CSV files
-    df_ftrial.to_csv('income_iters_tr/income_ftrial_new.csv')
-    df_ctrial1.to_csv('income_iters_tr/income_ctrial1_new.csv')
-    df_ctrial2.to_csv('income_iters_tr/income_ctrial2_new.csv')
+    df_ftrial.to_csv('../utils/income_ftrial_new.csv')
+    df_ctrial1.to_csv('../utils/income_ctrial1_new.csv')
+    df_ctrial2.to_csv('../utils/income_ctrial2_new.csv')
