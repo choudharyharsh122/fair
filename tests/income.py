@@ -97,8 +97,8 @@ def preprocess_data():
     #y_val = np.expand_dims(y_val, axis=1)
 
     # Concatenate x_val and y_val along the columns
-    file_path_raw = os.path.join(data_dir, 'val_data_raw_income.csv')
-    file_path_scaled = os.path.join(data_dir, 'val_data_scaled_income.csv')
+    file_path_raw = os.path.join('../data/val_data', 'val_data_raw_income.csv')
+    file_path_scaled = os.path.join('../data/val_data', 'val_data_scaled_income.csv')
 
     data_combined_raw = np.concatenate((x_val, y_val), axis=1)
 

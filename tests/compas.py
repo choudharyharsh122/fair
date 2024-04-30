@@ -85,8 +85,8 @@ def preprocess_data():
 
     # Concatenate x_val and y_val along the columns
 
-    file_path_raw = 'val_data_compas/val_data_raw_compas.csv'
-    file_path_scaled = 'val_data_compas/val_data_scaled_compas.csv'
+    file_path_raw = '../data/val_data/val_data_raw_compas.csv'
+    file_path_scaled = '../data/val_data/val_data_scaled_compas.csv'
 
     data_combined_raw = np.concatenate((x_val, y_val), axis=1)
 
