@@ -22,6 +22,9 @@ class CustomNetwork(tf.keras.Model):
                                                  bias_initializer=tf.keras.initializers.GlorotUniform())  # Set bias initializer
             #dense_layer.trainable = True  # Set trainable to True
             self.layer_list.append(dense_layer)
+
+        #build the network    
+        self.build((None, layer_sizes[0]))
     
     def build(self, input_shape):
         # Set input shape for the first layer
@@ -51,10 +54,10 @@ class CustomNetwork(tf.keras.Model):
         return loss
     
 
-    def obj_fun(self, x, y, params):
+    def get_obj(self, x, y, params):
          
-        x = tf.convert_to_tensor(x)
-        y = tf.convert_to_tensor(y)   
+        x = tf.convert_to_tensor(x, dtype=tf.float32)
+        y = tf.convert_to_tensor(y, dtype=tf.float32)   
 
         model_parameters = self.trainable_variables
 
@@ -80,8 +83,8 @@ class CustomNetwork(tf.keras.Model):
     
     def get_obj_grad(self, x, y, params):
 
-        x = tf.convert_to_tensor(x)
-        y = tf.convert_to_tensor(y)   
+        x = tf.convert_to_tensor(x, dtype=tf.float32)
+        y = tf.convert_to_tensor(y, dtype=tf.float32)   
         
         # Forward pass
         with tf.GradientTape() as tape:
@@ -98,10 +101,10 @@ class CustomNetwork(tf.keras.Model):
     
     def get_constraint(self, x1_sensitive, y1_sensitive, x2_sensitive, y2_sensitive, params):
 
-        x1_sensitive = tf.convert_to_tensor(x1_sensitive)
-        y1_sensitive = tf.convert_to_tensor(y1_sensitive)   
-        x2_sensitive = tf.convert_to_tensor(x2_sensitive)
-        y2_sensitive = tf.convert_to_tensor(y2_sensitive)   
+        x1_sensitive = tf.convert_to_tensor(x1_sensitive, dtype=tf.float32)
+        y1_sensitive = tf.convert_to_tensor(y1_sensitive, dtype=tf.float32)   
+        x2_sensitive = tf.convert_to_tensor(x2_sensitive, dtype=tf.float32)
+        y2_sensitive = tf.convert_to_tensor(y2_sensitive, dtype=tf.float32)   
         
         sensitive_fwd1 = tf.reshape(self.call(x1_sensitive),[-1])
         sensitive_loss1 = self.compute_loss(sensitive_fwd1, tf.reshape(y1_sensitive, [-1]))
@@ -115,10 +118,10 @@ class CustomNetwork(tf.keras.Model):
     
     def get_constraint_grad(self, x1_sensitive, y1_sensitive, x2_sensitive, y2_sensitive, params):
 
-        x1_sensitive = tf.convert_to_tensor(x1_sensitive)
-        y1_sensitive = tf.convert_to_tensor(y1_sensitive)   
-        x2_sensitive = tf.convert_to_tensor(x2_sensitive)
-        y2_sensitive = tf.convert_to_tensor(y2_sensitive)
+        x1_sensitive = tf.convert_to_tensor(x1_sensitive, dtype=tf.float32)
+        y1_sensitive = tf.convert_to_tensor(y1_sensitive, dtype=tf.float32)   
+        x2_sensitive = tf.convert_to_tensor(x2_sensitive, dtype=tf.float32)
+        y2_sensitive = tf.convert_to_tensor(y2_sensitive, dtype=tf.float32)
         
         with tf.GradientTape() as tape:
             sensitive_fwd1 = tf.reshape(self.call(x1_sensitive),[-1])
@@ -149,13 +152,21 @@ class CustomNetwork(tf.keras.Model):
 
         return cons_gradients
     
-    def load_model(directory_path, model_file):
-        model = tf.keras.models.load_model(os.path.join(directory_path, model_file))
-        return model
-
     def to_backend(obj):
         return tf.convert_to_tensor(obj)
     
-    def save(self, dir):
+    def save_model(self, dir):
         self.save(str(dir)+'.h5')
 
+    def get_trainable_params(self):
+        nn_parameters = self.trainable_variables
+        initw = [param.numpy() for param in nn_parameters]
+        num_param = sum(p.size for p in initw)
+        return initw, num_param
+    
+    def evaluate(self, x):
+        return self.call(x).numpy()
+
+def load_model(directory_path, model_file):
+        model = tf.keras.models.load_model(os.path.join(directory_path, model_file))
+        return model

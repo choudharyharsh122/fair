@@ -134,15 +134,24 @@ class CustomNetwork(nn.Module):
         cgrad = torch.cat(cgrad, dim=0)
         return cgrad
     
-    def load_model(directory_path, model_file):
-        model = torch.load(os.path.join(directory_path, model_file), map_location=torch.device('cpu'))
-        return model
-
-    def to_backend(obj):
+    def to_backend(self, obj):
         return torch.Tensor(obj)
     
-    def save(self, dir):
+    def save_model(self, dir):
         torch.save(self, str(dir)+'.pth')
-    
 
+    def get_trainable_params(self):
+        nn_parameters = list(self.parameters())
+        initw = [param.data for param in nn_parameters]
+        num_param = sum(p.numel() for p in self.parameters())
+        return initw, num_param
+    
+    def evaluate(self, x):
+        with torch.no_grad():
+            predictions = self.forward(x)
+        return predictions.detach().numpy()
+    
+def load_model(directory_path, model_file):
+        model = torch.load(os.path.join(directory_path, model_file), map_location=torch.device('cpu'))
+        return model
 

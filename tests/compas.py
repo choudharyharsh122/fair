@@ -288,21 +288,18 @@ if __name__ == "__main__":
         from pytorch_connect import CustomNetwork
 
 
-    loss_bound=1
+    loss_bound=5e-3
     trials = 21
-    maxiter = 200
+    maxiter = 500
     acc_arr = []
     max_acc = 0
-    ftrial = np.zeros((maxiter, trials))
-    ctrial1 = np.zeros((maxiter, trials))
-    ctrial2 = np.zeros((maxiter, trials))
+    # ftrial = np.zeros((maxiter))
+    # ctrial1 = np.zeros((maxiter))
+    # ctrial2 = np.zeros((maxiter))
+    ftrial, ctrial1, ctrial2 = [], [], []
     initsaved = []
     #x_train, x_val, y_train, y_val = train_test_split(in_df.values, out_df.values, test_size=0.3, random_state=42)
     ip_size = x_train.shape[1]
-    # X_train = torch.tensor(X_train, dtype=torch.float32)
-    # Y_train = torch.tensor(y_train, dtype=torch.float32)
-    # X_val = torch.tensor(X_val, dtype=torch.float32)
-    # Y_val = torch.tensor(y_val, dtype=torch.float32)
     saved_model = []
     for trial in range(trials):
         print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>TRIAL", trial)
@@ -321,28 +318,35 @@ if __name__ == "__main__":
         print(num_trials)
         #print(num_trials)
         net = CustomNetwork(model_specs)
-        nn_parameters = list(net.parameters())
         operations = Operations(data, net)
         
-        initw = [param.data for param in nn_parameters]
-        # print(len(initw))
-        num_param = sum(p.numel() for p in net.parameters())
-        params = paramvals(maxiter=maxiter, beta=10., rho=0.8, lamb=0.5, hess='diag', tau=1., mbsz=100,
-                        numcon=2, geomp=0.2, stepdecay='dimin', gammazero=0.1, zeta=0.1, N=num_trials, n=num_param, lossbound=[loss_bound, loss_bound], scalef=[1., 1.])
+        initw, num_param = net.get_trainable_params()
+        params = paramvals(maxiter=maxiter, beta=10., rho=3e-3, lamb=0.5, hess='diag', tau=4., mbsz=100,
+                        numcon=2, geomp=0.2, stepdecay='dimin', gammazero=0.1, zeta=0.7, N=num_trials, n=num_param, lossbound=[loss_bound, loss_bound], scalef=[1., 1.])
         w, iterfs, itercs = StochasticGhost.StochasticGhost(operations.obj_fun, operations.obj_grad, [operations.conf1, operations.conf2], [operations.conJ1, operations.conJ2], initw, params)
-        ftrial[:, trial] = iterfs
-        #print("The moment of TRUTH",itercs.shape)
-        ctrial1[:, trial] = itercs[:,0]
-        ctrial2[:, trial] = itercs[:,1]
+        
+        if np.isnan(w[0]).any():
+            print("reached infeasibility not saving the model")
+        else:
+            ftrial.append(iterfs)
+            ctrial1.append(itercs[:,0])
+            ctrial2.append(itercs[:,1])
 
-        saved_model.append(net)
-        directory = "../saved_models/"+str(model_name)
-        os.makedirs(directory, exist_ok=True)
-        # Save the model
-        net.save(os.path.join(directory, f'saved_model{trial}'))
-        #acc_arr.append(acc)
+            saved_model.append(net)
+            directory = "../saved_models/"+str(model_name)
 
+            # Check if the directory exists
+            if not os.path.exists(directory):
+                # If the directory doesn't exist, create it
+                os.makedirs(directory)
 
+            # Save the model
+            model_path = os.path.join(directory, f'saved_model_compas{trial}')
+            net.save_model(model_path)
+    
+    ftrial = np.array(ftrial).T
+    ctrial1 = np.array(ctrial1).T
+    ctrial2 = np.array(ctrial2).T
     print(">>>>>>>>>>>>>>>>>>>ACCURACY ARRAY<<<<<<<<<<<<<<<<")
     #print(acc_arr)
     df_ftrial = pd.DataFrame(ftrial, columns=range(1, ftrial.shape[1]+1), index=range(1, ftrial.shape[0]+1))
@@ -350,6 +354,6 @@ if __name__ == "__main__":
     df_ctrial2 = pd.DataFrame(ctrial2, columns=range(1, ctrial2.shape[1]+1), index=range(1, ctrial2.shape[0]+1))
 
     # Save DataFrames to CSV files
-    df_ftrial.to_csv('income_iters_tr/income_ftrial_new.csv')
-    df_ctrial1.to_csv('income_iters_tr/income_ctrial1_new.csv')
-    df_ctrial2.to_csv('income_iters_tr/income_ctrial2_new.csv')
+    df_ftrial.to_csv('../utils/compas_ftrial_new.csv')
+    df_ctrial1.to_csv('../utils/compas_ctrial1_new.csv')
+    df_ctrial2.to_csv('../utils/compas_ctrial2_new.csv')
