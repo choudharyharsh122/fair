@@ -20,5 +20,7 @@ setup(
         'scikit-learn==1.3.0',
         'matplotlib',
         'autoray==0.6.7',
+        'tensorflow==2.16.1',
+        'keras==3.2.1'
     ],
 )
