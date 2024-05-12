@@ -6,6 +6,9 @@ The package has a series of notebooks which show the algorithm's performance on 
 Unit tests are also performed over MNIST and CIFAR-10 datasets which are available as python scripts in the test folder.
 The ojective can be the loss of a ML model such as Neural Net and constraints can be some empirical risk measure.
 
+<br>
+NOTE:As a matter of civic responsibility, the authors of the fairlearn software package wish to declare that any use of the package to enforce demographic parity or any fairness metric oriented towards active discrimination for the sake of social engineering, as espoused by the ideology of DEI is fundamentally nefarious and declare their firm opposition to such policy. Furthermore, as it will inevitably lead to only disastrous outcomes, the purveyors of ghostFair will not actively cooperate or support any entity who wishes to use this software for such destructive purposes.
+
 ## Setup Instructions
 
 To install and use this package, follow these steps:
