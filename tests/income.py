@@ -301,7 +301,7 @@ if __name__ == "__main__":
         print("Please specify the model architecture")
 
     # Call the function from the imported module
-    loss_bound=1e-2
+    loss_bound=2e-3
     trials = 21
     maxiter = 200
     acc_arr = []
@@ -337,12 +337,12 @@ if __name__ == "__main__":
         
         initw, num_param = net.get_trainable_params()
         # print(len(initw))
-        params = paramvals(maxiter=maxiter, beta=10., rho=8e-3, lamb=0.5, hess='diag', tau=4., mbsz=100,
+        params = paramvals(maxiter=maxiter, beta=10., rho=1e-3, lamb=0.5, hess='diag', tau=2., mbsz=100,
                         numcon=2, geomp=0.2, stepdecay='dimin', gammazero=0.1, zeta=0.4, N=num_trials, n=num_param, lossbound=[loss_bound, loss_bound], scalef=[1., 1.])
         w, iterfs, itercs = StochasticGhost.StochasticGhost(operations.obj_fun, operations.obj_grad, [operations.conf1, operations.conf2], [operations.conJ1, operations.conJ2], initw, params)
         
         if np.isnan(w[0]).any():
-            print("reached infeasibility no saving the model")
+            print("reached infeasibility not saving the model")
         else:
             ftrial.append(iterfs)
             ctrial1.append(itercs[:,0])
